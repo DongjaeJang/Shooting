@@ -18,7 +18,7 @@
 #define AGENT_SPEED 20
 #define AGENT_HEIGHT 50
 #define AGENT_WIDTH 50
-#define ENEMY_1_GEN_RATE 1.5f
+#define ENEMY_1_GEN_RATE 0.5f
 #define ENEMY_1_HEIGHT 10
 #define ENEMY_1_WIDHT 10
 #define SCREEN_WIDTH 1280
@@ -661,6 +661,8 @@ void initHeroAgent()
 	heroAgent.ultimate = 2;
 	heroAgent.shown = true;
 
+
+	setObjectImage(heroAgent.obj, "Images/agent.png");
 	showObject(heroAgent.obj);
 	showObject(heroAgent.ultimateIconObj);
 	setObjectImage(heroAgent.ultimateCountObj,"Images/2.png");
@@ -725,15 +727,25 @@ void checkLevel()
 {
 	char image[30];
 	printf("cur exp :%d\n", heroAgent.cumulatedExp);
-
-	if (heroAgent.cumulatedExp > 1000 && (heroAgent.level == 2))
+	if (heroAgent.cumulatedExp > 1000 && (heroAgent.level == 3) && (heroAgent.cumulatedExp % 500)==0 )
+	{
+		//궁극기증가
+		if (heroAgent.ultimate < 5)
+		{
+			heroAgent.ultimate++;
+			sprintf(image, "Images/%d.png", heroAgent.ultimate);
+			setObjectImage(heroAgent.ultimateCountObj, image);
+		}
+		
+	}
+	else if (heroAgent.cumulatedExp > 1000 && (heroAgent.level == 2))
 	{
 		//궁극기증가
 		heroAgent.ultimate++;
 		sprintf(image, "Images/%d.png", heroAgent.ultimate);
 		setObjectImage(heroAgent.ultimateCountObj, image);
-
-		showMessage("레벨업(TBD 그래픽화) 현재 레벨 3");
+		setObjectImage(heroAgent.obj, "Images/agent3.png");
+		showMessage("레벨업 - 레벨 3");
 		heroAgent.level = 3;
 	}
 	else if (heroAgent.cumulatedExp > 400 && (heroAgent.level == 1))
@@ -742,9 +754,11 @@ void checkLevel()
 		heroAgent.ultimate++;
 		sprintf(image, "Images/%d.png", heroAgent.ultimate);
 		setObjectImage(heroAgent.ultimateCountObj, image);
+		setObjectImage(heroAgent.obj, "Images/agent2.png");
+		showMessage("레벨업 - 레벨 2");
 
-		showMessage("레벨업(TBD 그래픽화) 현재 레벨 2");
 		heroAgent.level = 2;
+
 	}
 	else if (heroAgent.cumulatedExp > 150 && (heroAgent.level == 0))
 	{
@@ -752,9 +766,10 @@ void checkLevel()
 		heroAgent.ultimate++;
 		sprintf(image, "Images/%d.png", heroAgent.ultimate);
 		setObjectImage(heroAgent.ultimateCountObj, image);
+		setObjectImage(heroAgent.obj, "Images/agent1.png");
 
 
-		showMessage("레벨업(TBD 그래픽화) 현재 레벨 1");
+		showMessage("레벨업 - 레벨 1");
 		heroAgent.level = 1;
 	}
 }
