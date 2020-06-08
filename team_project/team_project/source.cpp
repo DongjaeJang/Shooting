@@ -382,7 +382,7 @@ void timerCallback(TimerID timer)
 		{
 			int randType;
 
-			if (heroAgent.level >= 3)
+			if (heroAgent.cumulatedExp >= 3)
 				randType = (rand() % 4) + 1;
 			else if (heroAgent.level >= 2)
 				randType = (rand() % 3) + 1;
@@ -463,6 +463,9 @@ void timerCallback(TimerID timer)
 					(*iterE).hp -= 10;
 					if ((*iterE).hp <= 0)
 					{
+						if ((*iterE).type == 11 || (*iterE).type == 12 || (*iterE).type == 13 || (*iterE).type == 14)
+							bossAppeared = false;
+
 						heroAgent.cumulatedExp += (*iterE).exp;
 						checkLevel();
 						hideObject((*iterE).obj);
