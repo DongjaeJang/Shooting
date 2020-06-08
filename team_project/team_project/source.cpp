@@ -18,7 +18,7 @@
 #define AGENT_SPEED 20
 #define AGENT_HEIGHT 50
 #define AGENT_WIDTH 50
-#define ENEMY_1_GEN_RATE 0.5f
+#define ENEMY_1_GEN_RATE 1.0f
 #define ENEMY_1_HEIGHT 10
 #define ENEMY_1_WIDHT 10
 #define SCREEN_WIDTH 1280
@@ -68,6 +68,7 @@ struct enemyObject {
 	int y;
 	int dx;
 	int dy;
+	int moveTimer = 0;
 };
 
 struct bulitObject{
@@ -118,6 +119,10 @@ list<bulitObject> bulitList;
 
 bool gameStarted = false;
 
+// 보스 등장 조절
+bool bossAppeared = false;
+bool boss[4] = { 0 };
+
 
 ObjectID createObject(const char* image, SceneID scene, int x, int y, bool shown);
 void keyboardCallback(KeyCode kc, KeyState ks);
@@ -136,6 +141,8 @@ void initBulits();
 void initGameUI();
 void initEnemys();
 void createEnemy(int type);
+void createEnemyBuilt(int x, int y);
+void createBoss(int type);
 void agentMove(int dx, int dy);
 void createBulit();
 void checkLevel();
@@ -243,8 +250,73 @@ void timerCallback(TimerID timer)
 		{
 			pair<bool, int> hit;
 			bool destroy=false;
+
 			(*iterE).x += (*iterE).dx;
 			(*iterE).y += (*iterE).dy;
+
+			// type 종류에 따라 move패턴 설정 위함
+			if ((*iterE).type == 2)
+			{
+				if ((*iterE).moveTimer % 10 < 5)
+					(*iterE).dy *= (-1);
+
+				(*iterE).moveTimer += 1;
+			}
+			else if ((*iterE).type == 3)
+			{
+				if ((*iterE).moveTimer % 40 > 30)
+					hideObject((*iterE).obj);
+				else
+					showObject((*iterE).obj);
+
+
+				(*iterE).moveTimer += 1;
+			}
+			else if ((*iterE).type == 4)
+			{
+				if ((*iterE).moveTimer >= 3)
+					(*iterE).dx = 0;
+
+				if ((*iterE).moveTimer % 30 == 10)
+					createEnemyBuilt((*iterE).x, (*iterE).y);
+
+
+				(*iterE).moveTimer += 1;
+			}
+			// 보스
+			else if ((*iterE).type == 11 || (*iterE).type == 12 || (*iterE).type == 13 || (*iterE).type == 14)
+			{
+				if ((*iterE).moveTimer >= 3)
+					(*iterE).dx = 0;
+
+				// 보스1
+				if ((*iterE).type == 11)
+				{
+					if ((*iterE).moveTimer % 20 > 10)
+						createEnemyBuilt((*iterE).x, (*iterE).y);
+				}
+				// 보스2
+				else if ((*iterE).type == 12)
+				{
+
+				}
+				// 보스3
+				else if ((*iterE).type == 13)
+				{
+
+				}
+				// 보스 최종
+				else
+				{
+
+				}
+
+				(*iterE).moveTimer += 1;
+			}
+
+			(*iterE).x += (*iterE).dx;
+			(*iterE).y += (*iterE).dy;
+
 			locateObject((*iterE).obj, backgroundScene, (*iterE).x, (*iterE).y);
 
 
@@ -255,10 +327,14 @@ void timerCallback(TimerID timer)
 				(*iterE).hp -= hit.second;
 				if ((*iterE).hp <= 0)
 				{
+					if ((*iterE).type == 11 || (*iterE).type == 12 || (*iterE).type == 13 || (*iterE).type == 14)
+						bossAppeared = false;
+
 					destroy = true;
 					heroAgent.cumulatedExp += (*iterE).exp;
 					checkLevel();
 				}
+
 			}
 			//조종대상에 부딫혔을때
 			if(!(heroAgent.invincible)&&isAgentHit((*iterE).x, (*iterE).y,AGENT_WIDTH,AGENT_HEIGHT))
@@ -302,7 +378,23 @@ void timerCallback(TimerID timer)
 	}
 	else if (timer == enemy1GenTimer)
 	{
-		createEnemy(1);
+		if (!bossAppeared)
+		{
+			int randType;
+
+			if (heroAgent.level >= 3)
+				randType = (rand() % 4) + 1;
+			else if (heroAgent.level >= 2)
+				randType = (rand() % 3) + 1;
+			else if (heroAgent.level >= 1) {
+				randType = (rand() % 2) + 1;
+			}
+			else if (heroAgent.level >= 0) {
+				randType = 1;
+			}
+			createEnemy(randType);
+		}
+
 		setTimer(enemy1GenTimer, ENEMY_1_GEN_RATE);
 		startTimer(enemy1GenTimer);
 	}
@@ -551,6 +643,7 @@ void createEnemy(int type)
 
 	if (type == 1)
 	{
+		e.type = type;
 		e.x = SCREEN_WIDTH;
 		e.y = yPos;
 		e.dx = dx;
@@ -562,13 +655,96 @@ void createEnemy(int type)
 	}
 	else if (type == 2)
 	{
-		//두번째 유형
+		e.type = type;
+		e.x = SCREEN_WIDTH;
+		e.y = yPos;
+		e.dx = dx;
+		e.dy = 13;
+		e.hp = 50;
+		e.exp = 15;
+		e.obj = createObject("Images/e2.png", backgroundScene, e.x, e.y, true);
+		enemyList1.push_back(e);
 	}
 	else if (type == 3)
 	{
-		//세번째 유형
+		e.type = type;
+		e.x = SCREEN_WIDTH;
+		e.y = yPos;
+		e.dx = dx;
+		e.dy = 0;
+		e.hp = 80;
+		e.exp = 20;
+		e.obj = createObject("Images/e3.png", backgroundScene, e.x, e.y, true);
+		enemyList1.push_back(e);
+	}
+	else if (type == 4)
+	{
+		e.type = type;
+		e.x = SCREEN_WIDTH;
+		e.y = yPos;
+		e.dx = -20;
+		e.dy = 0;
+		e.hp = 50;
+		e.exp = 25;
+		e.obj = createObject("Images/e4.png", backgroundScene, e.x, e.y, true);
+		enemyList1.push_back(e);
 	}
 }
+
+// 적4 미사일
+void createEnemyBuilt(int x, int y)
+{
+	enemyObject e;
+	e.x = x;
+	e.y = y;
+	e.dx = -10;
+	e.dy = 0;
+	e.hp = 1;
+	e.exp = 1;
+	e.obj = createObject("Images/enemyBuilt.png", backgroundScene, e.x, e.y, true);
+	enemyList1.push_back(e);
+}
+
+void createBoss(int type)
+{
+	bossAppeared = true;
+
+	enemyObject e;
+	e.x = SCREEN_WIDTH;
+	e.y = 200;
+	e.dx = -50;
+	e.dy = 0;
+	e.exp = 0;
+	// 보스 1
+	if (type == 1)
+	{
+		e.type = 11;
+		e.hp = 500;
+		e.obj = createObject("Images/b1.png", backgroundScene, e.x, e.y, true);
+		enemyList1.push_back(e);
+	}
+	// 보스 2
+	else if (type == 2)
+	{
+		e.type = 12;
+		e.hp = 1000;
+		e.obj = createObject("Images/b2.png", backgroundScene, e.x, e.y, true);
+		enemyList1.push_back(e);
+	}
+	// 보스 3
+	else if (type == 3)
+	{
+
+	}
+	// 최종
+	else if(type == 4)
+	{
+
+	}
+
+	showMessage("Warning !! Boss appears !!");
+}
+
 
 void createBulit()
 {
@@ -620,6 +796,8 @@ void createBulit()
 		bulitList.push_back(b);
 	}
 }
+
+
 void initTimers()
 {
 
@@ -759,6 +937,12 @@ void checkLevel()
 
 		heroAgent.level = 2;
 
+		if (heroAgent.cumulatedExp > 400 && boss[1] == 0)
+		{
+			boss[1] = 1;
+			createBoss(heroAgent.level);
+		}
+
 	}
 	else if (heroAgent.cumulatedExp > 150 && (heroAgent.level == 0))
 	{
@@ -771,6 +955,12 @@ void checkLevel()
 
 		showMessage("레벨업 - 레벨 1");
 		heroAgent.level = 1;
+
+		if (heroAgent.cumulatedExp > 150 && boss[0] == 0)
+		{
+			boss[0] = 1;
+			createBoss(heroAgent.level);
+		}
 	}
 }
 
