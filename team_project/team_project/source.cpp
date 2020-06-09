@@ -292,8 +292,21 @@ void timerCallback(TimerID timer)
 				// 보스1
 				if ((*iterE).type == 11)
 				{
-					if ((*iterE).moveTimer % 20 > 10)
-						createEnemyBuilt((*iterE).x, (*iterE).y);
+					if ((*iterE).moveTimer % 77 > 72)
+					{
+						for (int i = 0; i < 3; i++)
+							createEnemyBuilt((*iterE).x, (*iterE).y + 100 * i);
+					}
+					if ((*iterE).moveTimer % 100 > 50 && (*iterE).moveTimer % 100 < 55)
+					{
+						for (int i = 0; i < 10; i++)
+						{
+							int randYPos = rand() % SCREEN_HEIGHT;
+							createEnemyBuilt((*iterE).x, randYPos);
+						}
+						
+					}
+					
 				}
 				// 보스2
 				else if ((*iterE).type == 12)
@@ -328,8 +341,10 @@ void timerCallback(TimerID timer)
 				if ((*iterE).hp <= 0)
 				{
 					if ((*iterE).type == 11 || (*iterE).type == 12 || (*iterE).type == 13 || (*iterE).type == 14)
+					{
 						bossAppeared = false;
-
+						showMessage("Clear!")
+					}
 					destroy = true;
 					heroAgent.cumulatedExp += (*iterE).exp;
 					checkLevel();
@@ -382,7 +397,7 @@ void timerCallback(TimerID timer)
 		{
 			int randType;
 
-			if (heroAgent.cumulatedExp >= 3)
+			if (heroAgent.level >= 3)
 				randType = (rand() % 4) + 1;
 			else if (heroAgent.level >= 2)
 				randType = (rand() % 3) + 1;
