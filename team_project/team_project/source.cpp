@@ -11,16 +11,17 @@
 #include <list>
 #include <queue>
 
+
 #define REGEN_FRAME_RATE 0.1f
-#define BACK_SCENE_FRAME_PER_PIXEL 5
+#define BACK_SCENE_FRAME_PER_PIXEL 10
 #define AGENT_UPDATE_TIME 0.01f
 #define OBJECT_UPDATE_TIME 0.01f
 #define AGENT_SPEED 20
 #define AGENT_HEIGHT 50
 #define AGENT_WIDTH 50
-#define ENEMY_1_GEN_RATE 1.0f
+#define ENEMY_1_GEN_RATE 0.8f
 #define ENEMY_1_HEIGHT 10
-#define ENEMY_1_WIDHT 10
+#define ENEMY_1_WIDTH 10
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 760
 #define INITIAL_LIFE 2
@@ -64,6 +65,8 @@ struct enemyObject {
 	int exp;
 	int type;
 	int hp;
+	int width;
+	int height;
 	int x;
 	int y;
 	int dx;
@@ -94,6 +97,24 @@ TimerID backgroundMovingTimer;
 TimerID enemy1GenTimer;
 TimerID reGenTimer;
 TimerID ultimateTimer;
+/*
+SoundIDs
+*/
+SoundID backgroundSound;
+SoundID laserSound;
+SoundID explosionSound;
+SoundID b1AppearSound;
+SoundID b2AppearSound;
+SoundID b3AppearSound;
+SoundID b1dieSound;
+SoundID b2dieSound;
+SoundID b3dieSound;
+SoundID levelUpSound;
+SoundID notEnoughSound;
+SoundID startSound;
+SoundID manualOpenSound;
+SoundID manualCloseSound;
+
 
 /*
 ObjectIDs
@@ -102,7 +123,7 @@ ObjectIDs
 /*
 UI component
 */
-ObjectID startButtonObj, endButtonObj;
+ObjectID startButtonObj, endButtonObj, manualButtonObj, titleObj, manualObj;
 
 /*
 Other variables
@@ -118,9 +139,10 @@ list<enemyObject> enemyList1;
 list<bulitObject> bulitList;
 
 bool gameStarted = false;
+int stage = 0; // 뒷배경 변화 단계(stage)
 
 // 보스 등장 조절
-bool bossAppeared = false;
+bool bossAppeared[3] = { false, };
 bool boss[4] = { 0 };
 
 
@@ -161,8 +183,8 @@ int main()
 	/*
 	scenes
 	*/
-	backgroundScene = createScene("코딩하기 싫다", "Images/background.png");
-	backSceneObject.x = 0;
+	backgroundScene = createScene("Shooting Star", "Images/background.png");
+	backSceneObject.x = 1120;
 	backSceneObject.y = -150;
 	backSceneObject.dx = BACK_SCENE_FRAME_PER_PIXEL;
 	backSceneObject.obj = createObject("Images/nebula03.png", backgroundScene, backSceneObject.x, backSceneObject.y, true);
@@ -170,9 +192,11 @@ int main()
 	/*
 	UI
 	*/
+	titleObj = createObject("Images/title.png", backgroundScene,360, 450,true);
 	startButtonObj = createObject("Images/start.png", backgroundScene, 590, 70, true);
 	endButtonObj = createObject("Images/end.png", backgroundScene, 590, 20, true);
-	
+	manualButtonObj = createObject("Images/manual_btn.png", backgroundScene, 530, 120,true);
+	manualObj = createObject("Images/manual.png", backgroundScene, 300, 200, false);
 	/*
 	Objects
 	*/
@@ -180,8 +204,24 @@ int main()
 	heroAgent.ultimateIconObj = createObject("Images/ultimate.png", backgroundScene, 0, 600, false);
 	heroAgent.ultimateCountObj = createObject("Images/0.png", backgroundScene, 80, 600, false);
 	heroAgent.ultimateObj = createObject("Images/laser3.png", backgroundScene, heroAgent.x, heroAgent.y, false);
+	/*
+	Sounds
+	*/
+	backgroundSound = createSound("Sounds/background.wav");
+	laserSound = createSound("Sounds/laser.wav");
+	explosionSound = createSound("Sounds/explosion.wav");
+	b1AppearSound = createSound("Sounds/b1appear.wav");
+	b2AppearSound = createSound("Sounds/b2appear.wav");
+	b3AppearSound = createSound("Sounds/b3appear.wav");
+	b1dieSound= createSound("Sounds/b1die.wav");
+	b2dieSound = createSound("Sounds/b2die.wav");
+	b3dieSound = createSound("Sounds/b3die.wav");
+	startSound = createSound("Sounds/start.wav");
+	notEnoughSound = createSound("Sounds/notenough.wav");
+	levelUpSound = createSound("Sounds/levelup.wav");
+	manualCloseSound = createSound("Sounds/ui_close.wav");
+	manualOpenSound = createSound("Sounds/ui_open.wav");
 
-	
 	/*
 	Timers
 	*/
@@ -192,6 +232,7 @@ int main()
 	reGenTimer = createTimer(REGEN_FRAME_RATE);
 	ultimateTimer = createTimer(ULTIMATE_FRAME_RATE);
 	startGame(backgroundScene);
+
 }
 /*
 
@@ -207,6 +248,18 @@ void mouseCallback(ObjectID object, int x, int y, MouseAction action)
 	}
 	else if (object == startButtonObj) {
 		startGame();
+		playSound(startSound);
+		playSound(backgroundSound, true);
+
+	}
+	else if (object == manualButtonObj)
+	{
+		showObject(manualObj);
+		playSound(manualOpenSound);
+	}
+	else if (object == manualObj) {
+		hideObject(manualObj);
+		playSound(manualCloseSound);
 	}
 
 }
@@ -364,7 +417,7 @@ void timerCallback(TimerID timer)
 
 
 			//총알과 부딫혔는지
-			hit = isBulitHit((*iterE).x, (*iterE).y, ENEMY_1_WIDHT, ENEMY_1_HEIGHT);
+			hit = isBulitHit((*iterE).x, (*iterE).y, (*iterE).height, (*iterE).width);
 			if (hit.first)
 			{
 				(*iterE).hp -= hit.second;
@@ -372,39 +425,38 @@ void timerCallback(TimerID timer)
 				{
 					if ((*iterE).type == 11 || (*iterE).type == 12 || (*iterE).type == 13)
 					{
-						bossAppeared = false;
-						showMessage("Clear!");
+						//playSound(explosionSound, false);
+						bossAppeared[(*iterE).type-11] = false;
+
+						if ((*iterE).type == 11)
+							playSound(b1dieSound);
+						if ((*iterE).type == 12)
+							playSound(b2dieSound);
+						if ((*iterE).type == 13)
+							playSound(b3dieSound);
+						
 					}
 					destroy = true;
 					heroAgent.cumulatedExp += (*iterE).exp;
 					checkLevel();
 
-					if (heroAgent.cumulatedExp > 200 && boss[0] == 0)
-					{
-						boss[0] = 1;
-						createBoss(1);
-					}
-					else if (heroAgent.cumulatedExp > 500 && boss[1] == 0)
-					{
-						boss[1] = 1;
-						createBoss(2);
-					}
-					else if(heroAgent.cumulatedExp > 1100 && boss[2] == 0)
-					{
-						boss[2] = 1;
-						createBoss(3);
-					}
+
 
 
 				}
 
 			}
 			//조종대상에 부딫혔을때
-			if(!(heroAgent.invincible)&&isAgentHit((*iterE).x, (*iterE).y,AGENT_WIDTH,AGENT_HEIGHT))
+			if(!(heroAgent.invincible)&&isAgentHit((*iterE).x, (*iterE).y,(*iterE).width, (*iterE).height))
 			{
+				playSound(explosionSound);
 				heroAgent.life--;
 				if (heroAgent.life == -1)
 				{
+					char finalScoreMessage[30];
+					sprintf(finalScoreMessage, "your Score: %d", heroAgent.cumulatedExp*10);
+					stopSound(backgroundSound);
+					showMessage(finalScoreMessage);
 					endGame(false);
 					return;
 				}
@@ -434,16 +486,62 @@ void timerCallback(TimerID timer)
 		locateObject(backSceneObject.obj, backgroundScene, backSceneObject.x, backSceneObject.y);
 
 		if (backSceneObject.x < -3596)
-			backSceneObject.x = 1280;
+		{
+			backSceneObject.x = 1120;
+
+
+			if (bossAppeared[0] == false && bossAppeared[1]==false &&bossAppeared[2]==false)
+			{
+				if (stage == 0 && boss[0] == 0)
+				{
+					boss[0] = 1;
+					createBoss(1);
+				}
+				else if (stage == 1 && boss[1] == 0)
+				{
+					boss[1] = 1;
+					createBoss(2);
+				}
+				else if (stage == 2 && boss[2] == 0)
+				{
+					boss[2] = 1;
+					createBoss(3);
+				}
+				else//3스태이지 이후
+				{
+					boss[1]++;
+					createBoss(1);
+					if (stage % 2 == 0)
+					{
+						boss[3]++;
+						createBoss(3);
+					}
+					else
+					{
+						boss[2]++;
+						createBoss(2);
+					}
+
+				}
+				stage++;
+				if (stage == 1)
+					setObjectImage(backSceneObject.obj, "Images/nebula06.png");
+				else if (stage == 2)
+					setObjectImage(backSceneObject.obj, "Images/nebula07.png");
+			}
+
+
+
+		}
 
 		setTimer(backgroundMovingTimer, 0.1f);
 		startTimer(backgroundMovingTimer);
 	}
 	else if (timer == enemy1GenTimer)
 	{
-		if (!bossAppeared)
+		if (bossAppeared[0]==false && bossAppeared[1] == false&& bossAppeared[2] == false)
 		{
-			int randType;
+			int randType=1;
 
 			if (heroAgent.level >= 3)
 				randType = (rand() % 4) + 1;
@@ -516,29 +614,36 @@ void timerCallback(TimerID timer)
 		}
 		if (heroAgent.ultimateTimeCount>0)
 		{
-
-
 			list<enemyObject>::iterator iterE;
 			for (iterE = enemyList1.begin(); iterE != enemyList1.end(); )
 			{
-				if (heroAgent.y-50 < (*iterE).y && (*iterE).y < heroAgent.y + 50 && heroAgent.x< (*iterE).x )
+				if (heroAgent.y-(*iterE).height < (*iterE).y && (*iterE).y < heroAgent.y + (*iterE).height && heroAgent.x< (*iterE).x )
 				{
-					(*iterE).hp -= 10;
+					(*iterE).hp -= 20;
 					if ((*iterE).hp <= 0)
 					{
 						if ((*iterE).type == 11 || (*iterE).type == 12 || (*iterE).type == 13)
-							bossAppeared = false;
+						{
+							bossAppeared[(*iterE).type - 11] = false;
+							if ((*iterE).type == 11)
+								playSound(b1dieSound);
+							if ((*iterE).type == 12)
+								playSound(b2dieSound);
+							if ((*iterE).type == 13)
+								playSound(b3dieSound);
+						}
 
 						heroAgent.cumulatedExp += (*iterE).exp;
 						checkLevel();
 						hideObject((*iterE).obj);
 						iterE = enemyList1.erase(iterE);
 					}
+					else
+						iterE++;
 				}
 				else
-				{
 					iterE++;
-				}
+
 			}
 			setTimer(ultimateTimer, ULTIMATE_FRAME_RATE);
 			startTimer(ultimateTimer);
@@ -585,7 +690,7 @@ void keyboardCallback(KeyCode kc, KeyState ks)
 		{
 			if (heroAgent.ultimate == 0)
 			{
-				showMessage("궁극기 부족소리");
+				playSound(notEnoughSound);
 			}
 			else
 				createUltimate();
@@ -628,8 +733,7 @@ void startGame()
 	gameStarted = true;
 
 	//hide object
-	hideObject(startButtonObj);
-	hideObject(endButtonObj);
+	
 
 	initObjects();
 	
@@ -659,6 +763,8 @@ void endGame(bool success)
 	setObjectImage(startButtonObj, "Images/restart.png");
 	showObject(startButtonObj);
 	showObject(endButtonObj);
+	showObject(titleObj);
+	showObject(manualButtonObj);
 
 
 
@@ -713,6 +819,8 @@ void createEnemy(int type)
 		e.x = SCREEN_WIDTH;
 		e.y = yPos;
 		e.dx = dx;
+		e.width = 50;
+		e.height = 50;
 		e.dy = 0;
 		e.hp = 30;
 		e.exp = 10;
@@ -725,6 +833,8 @@ void createEnemy(int type)
 		e.x = SCREEN_WIDTH;
 		e.y = yPos;
 		e.dx = dx;
+		e.width = 50;
+		e.height = 50;
 		e.dy = 13;
 		e.hp = 50;
 		e.exp = 15;
@@ -737,6 +847,8 @@ void createEnemy(int type)
 		e.x = SCREEN_WIDTH;
 		e.y = yPos;
 		e.dx = dx;
+		e.width = 50;
+		e.height = 50;
 		e.dy = 0;
 		e.hp = 80;
 		e.exp = 20;
@@ -750,6 +862,8 @@ void createEnemy(int type)
 		e.y = yPos;
 		e.dx = -20;
 		e.dy = 0;
+		e.width = 65;
+		e.height = 65;
 		e.hp = 50;
 		e.exp = 25;
 		e.obj = createObject("Images/e4.png", backgroundScene, e.x, e.y, true);
@@ -767,13 +881,15 @@ void createEnemyBuilt(int x, int y, int dx, int dy)
 	e.dy = dy;
 	e.hp = 1;
 	e.exp = 1;
+	e.height = 20;
+	e.width = 20;
 	e.obj = createObject("Images/enemyBuilt.png", backgroundScene, e.x, e.y, true);
 	enemyList1.push_back(e);
 }
 
 void createBoss(int type)
 {
-	bossAppeared = true;
+	bossAppeared[type-1] = true;
 
 	enemyObject e;
 	e.x = SCREEN_WIDTH;
@@ -781,32 +897,38 @@ void createBoss(int type)
 	e.dx = -50;
 	e.dy = 0;
 	e.exp = 0;
+	e.width = 200;
+	e.height = 200;
+
 	// 보스 1
 	if (type == 1)
 	{
 		e.type = 11;
-		e.hp = 500;
+		e.hp = 1000;
 		e.obj = createObject("Images/b1.png", backgroundScene, e.x, e.y, true);
 		enemyList1.push_back(e);
+		playSound(b1AppearSound);
 	}
 	// 보스 2
 	else if (type == 2)
 	{
 		e.type = 12;
-		e.hp = 1000;
+		e.hp = 2000;
 		e.obj = createObject("Images/b2.png", backgroundScene, e.x, e.y, true);
 		enemyList1.push_back(e);
+		playSound(b2AppearSound);
 	}
 	// 보스 3
 	else if (type == 3)
 	{
 		e.type = 13;
-		e.hp = 1500;
+		e.hp = 3000;
 		e.obj = createObject("Images/b3.png", backgroundScene, e.x, e.y, true);
 		enemyList1.push_back(e);
+		playSound(b3AppearSound);
 	}
 
-	showMessage("Warning !! Boss appears !!");
+	//showMessage("Warning !! Boss appears !!");
 }
 
 
@@ -818,6 +940,7 @@ void createBulit()
 	int y = heroAgent.y+20;
 	int dx = 50;//탄속
 	int dy = 0;
+
 
 	if (heroAgent.level== 0)
 	{
@@ -835,7 +958,7 @@ void createBulit()
 		b.y = y;
 		b.dx = dx;
 		b.dy = dy;
-		b.damage = 15;
+		b.damage = 25;
 		b.obj = createObject("Images/bulit2.png", backgroundScene, b.x, b.y, true);
 		bulitList.push_back(b);
 	}
@@ -845,7 +968,7 @@ void createBulit()
 		b.y = y;
 		b.dx = dx;
 		b.dy = dy;
-		b.damage = 20;
+		b.damage = 40;
 		b.obj = createObject("Images/bulit3.png", backgroundScene, b.x, b.y, true);
 		bulitList.push_back(b);
 	}
@@ -855,7 +978,7 @@ void createBulit()
 		b.y = y;
 		b.dx = dx;
 		b.dy = dy;
-		b.damage = 30;
+		b.damage = 50;
 		b.obj = createObject("Images/bulit4.png", backgroundScene, b.x, b.y, true);
 		bulitList.push_back(b);
 	}
@@ -882,12 +1005,15 @@ void initObjects()
 
 void initBackScene()
 {
-	backSceneObject.x = 0;
+	backSceneObject.x = 1120;
 	backSceneObject.y = -150;
 }
 void initGameUI()
 {
-
+	hideObject(startButtonObj);
+	hideObject(endButtonObj);
+	hideObject(titleObj);
+	hideObject(manualButtonObj);
 }
 
 void initHeroAgent()
@@ -903,7 +1029,7 @@ void initHeroAgent()
 	heroAgent.ultimate = 2;
 	heroAgent.shown = true;
 
-
+	
 	setObjectImage(heroAgent.obj, "Images/agent.png");
 	showObject(heroAgent.obj);
 	showObject(heroAgent.ultimateIconObj);
@@ -936,8 +1062,8 @@ void initEnemys()
 
 bool isAgentHit(int x, int y, int width, int height)
 {
-	return (heroAgent.x < x&& x < heroAgent.x + width
-		&& heroAgent.y < y&& y < heroAgent.y + height);
+	return (heroAgent.x - width < x && x < heroAgent.x + width
+		&& heroAgent.y - height < y&& y < heroAgent.y + height);
 }
 
 pair<bool,int> isBulitHit(int x, int y, int width, int height)
@@ -950,8 +1076,8 @@ pair<bool,int> isBulitHit(int x, int y, int width, int height)
 	for (iterB = bulitList.begin(); iterB != bulitList.end(); )
 	{
 		int damage = 0;
-		if ( x- 100< (*iterB).x && (*iterB).x < x + width + 100
-			&& y -100 < (*iterB).y && (*iterB).y < y + height + 100)
+		if ( x- 50< (*iterB).x && (*iterB).x < x + width + 50
+			&& y -50< (*iterB).y && (*iterB).y < y + height + 50)
 		{
 			hideObject((*iterB).obj);
 
@@ -969,8 +1095,9 @@ void checkLevel()
 {
 	char image[30];
 	printf("cur exp :%d\n", heroAgent.cumulatedExp);
-	if (heroAgent.cumulatedExp > 1000 && (heroAgent.level == 3) && (heroAgent.cumulatedExp % 500)==0 )
+	if (heroAgent.cumulatedExp > 1500 && (heroAgent.level == 3) && (heroAgent.cumulatedExp % 500)==0 )
 	{
+		playSound(levelUpSound);
 		//궁극기증가
 		if (heroAgent.ultimate < 5)
 		{
@@ -980,30 +1107,31 @@ void checkLevel()
 		}
 		
 	}
-	else if (heroAgent.cumulatedExp > 1000 && (heroAgent.level == 2))
+	else if (heroAgent.cumulatedExp > 1500 && (heroAgent.level == 2))
 	{
+		playSound(levelUpSound);
 		//궁극기증가
 		heroAgent.ultimate++;
 		sprintf(image, "Images/%d.png", heroAgent.ultimate);
 		setObjectImage(heroAgent.ultimateCountObj, image);
 		setObjectImage(heroAgent.obj, "Images/agent3.png");
-		showMessage("레벨업 - 레벨 3");
 		heroAgent.level = 3;
 
 	}
-	else if (heroAgent.cumulatedExp > 400 && (heroAgent.level == 1))
+	else if (heroAgent.cumulatedExp > 1000 && (heroAgent.level == 1))
 	{
+		playSound(levelUpSound);
 		//궁극기증가
 		heroAgent.ultimate++;
 		sprintf(image, "Images/%d.png", heroAgent.ultimate);
 		setObjectImage(heroAgent.ultimateCountObj, image);
 		setObjectImage(heroAgent.obj, "Images/agent2.png");
-		showMessage("레벨업 - 레벨 2");
 
 		heroAgent.level = 2;
 	}
-	else if (heroAgent.cumulatedExp > 150 && (heroAgent.level == 0))
+	else if (heroAgent.cumulatedExp > 500 && (heroAgent.level == 0))
 	{
+		playSound(levelUpSound);
 		//궁극기증가
 		heroAgent.ultimate++;
 		sprintf(image, "Images/%d.png", heroAgent.ultimate);
@@ -1011,7 +1139,6 @@ void checkLevel()
 		setObjectImage(heroAgent.obj, "Images/agent1.png");
 
 
-		showMessage("레벨업 - 레벨 1");
 		heroAgent.level = 1;
 	}
 }
@@ -1026,6 +1153,7 @@ void reGenAgent()
 
 void createUltimate()
 {
+	playSound(laserSound, false);
 	char image[30];
 	heroAgent.invincible = true;
 	heroAgent.ultimateActivate = true;
