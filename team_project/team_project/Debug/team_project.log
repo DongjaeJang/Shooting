@@ -1,2 +1,3 @@
 ﻿  source.cpp
+C:\Users\duddj\git_repo\Shooting\team_project\team_project\source.cpp(576,49): warning C4305: '인수': 'double'에서 'Second'(으)로 잘립니다.
   team_project.vcxproj -> C:\Users\duddj\git_repo\Shooting\team_project\Debug\team_project.exe

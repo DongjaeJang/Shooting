@@ -14,6 +14,7 @@
 
 #define REGEN_FRAME_RATE 0.1f
 #define BACK_SCENE_FRAME_PER_PIXEL 10
+#define BACK_SCENE_FRAME_PER_ADDITIONAL_PIXEL 10
 #define AGENT_UPDATE_TIME 0.01f
 #define OBJECT_UPDATE_TIME 0.01f
 #define AGENT_SPEED 20
@@ -164,7 +165,7 @@ void initGameUI();
 void initEnemys();
 void createEnemy(int type);
 void createEnemyBuilt(int x, int y, int dx, int dy);
-void createBoss(int type);
+void createBoss(int type, int y = 200);
 void agentMove(int dx, int dy);
 void createBulit();
 void checkLevel();
@@ -454,7 +455,7 @@ void timerCallback(TimerID timer)
 				if (heroAgent.life == -1)
 				{
 					char finalScoreMessage[30];
-					sprintf(finalScoreMessage, "your Score: %d", heroAgent.cumulatedExp*10);
+					sprintf(finalScoreMessage, "your Score: %d", (heroAgent.level*5000)+heroAgent.cumulatedExp*10);
 					stopSound(backgroundSound);
 					showMessage(finalScoreMessage);
 					endGame(false);
@@ -483,6 +484,12 @@ void timerCallback(TimerID timer)
 	else if (timer == backgroundMovingTimer)
 	{
 		backSceneObject.x -= backSceneObject.dx;
+		if (stage >= 3)
+			backSceneObject.x-=BACK_SCENE_FRAME_PER_ADDITIONAL_PIXEL;
+	
+
+
+
 		locateObject(backSceneObject.obj, backgroundScene, backSceneObject.x, backSceneObject.y);
 
 		if (backSceneObject.x < -3596)
@@ -509,17 +516,27 @@ void timerCallback(TimerID timer)
 				}
 				else//3Ω∫≈¬¿Ã¡ˆ ¿Ã»ƒ
 				{
-					boss[1]++;
-					createBoss(1);
-					if (stage % 2 == 0)
+
+					if (stage % 3 == 0)
 					{
+						boss[1]++;
+						createBoss(1, 400);
+						boss[2]++;
+						createBoss(2);
+					}
+					else if (stage % 3 == 1)
+					{
+						boss[1]++;
+						createBoss(1, 400);
 						boss[3]++;
 						createBoss(3);
 					}
-					else
+					else if (stage %3 == 2)
 					{
 						boss[2]++;
-						createBoss(2);
+						createBoss(2, 350);
+						boss[3]++;
+						createBoss(3);
 					}
 
 				}
@@ -555,8 +572,10 @@ void timerCallback(TimerID timer)
 			}
 			createEnemy(randType);
 		}
-
-		setTimer(enemy1GenTimer, ENEMY_1_GEN_RATE);
+		if(stage >=3)
+			setTimer(enemy1GenTimer, ENEMY_1_GEN_RATE-0.4);
+		else
+			setTimer(enemy1GenTimer, ENEMY_1_GEN_RATE);
 		startTimer(enemy1GenTimer);
 	}
 	else if (timer == reGenTimer)
@@ -731,6 +750,7 @@ utils
 void startGame()
 {
 	gameStarted = true;
+	stage = 0;
 
 	//hide object
 	
@@ -812,13 +832,16 @@ void createEnemy(int type)
 	enemyObject e;
 	int yPos = rand() % (SCREEN_HEIGHT - 100);
 	int dx = -((rand() % 10) + 2);//∞°∑Œº”µµ
+	int additional_speed = 0;
+	if (stage >= 3)
+		additional_speed = -5;
 
 	if (type == 1)
 	{
 		e.type = type;
 		e.x = SCREEN_WIDTH;
 		e.y = yPos;
-		e.dx = dx;
+		e.dx = dx+ additional_speed;
 		e.width = 50;
 		e.height = 50;
 		e.dy = 0;
@@ -832,7 +855,7 @@ void createEnemy(int type)
 		e.type = type;
 		e.x = SCREEN_WIDTH;
 		e.y = yPos;
-		e.dx = dx;
+		e.dx = dx+ additional_speed;
 		e.width = 50;
 		e.height = 50;
 		e.dy = 13;
@@ -846,7 +869,7 @@ void createEnemy(int type)
 		e.type = type;
 		e.x = SCREEN_WIDTH;
 		e.y = yPos;
-		e.dx = dx;
+		e.dx = dx+ additional_speed;
 		e.width = 50;
 		e.height = 50;
 		e.dy = 0;
@@ -860,7 +883,7 @@ void createEnemy(int type)
 		e.type = type;
 		e.x = SCREEN_WIDTH;
 		e.y = yPos;
-		e.dx = -20;
+		e.dx = -20+ additional_speed;
 		e.dy = 0;
 		e.width = 65;
 		e.height = 65;
@@ -887,16 +910,15 @@ void createEnemyBuilt(int x, int y, int dx, int dy)
 	enemyList1.push_back(e);
 }
 
-void createBoss(int type)
+void createBoss(int type,int y)
 {
 	bossAppeared[type-1] = true;
 
 	enemyObject e;
 	e.x = SCREEN_WIDTH;
-	e.y = 200;
+	e.y = y;
 	e.dx = -50;
 	e.dy = 0;
-	e.exp = 0;
 	e.width = 200;
 	e.height = 200;
 
@@ -905,6 +927,7 @@ void createBoss(int type)
 	{
 		e.type = 11;
 		e.hp = 1000;
+		e.exp = 100;
 		e.obj = createObject("Images/b1.png", backgroundScene, e.x, e.y, true);
 		enemyList1.push_back(e);
 		playSound(b1AppearSound);
@@ -914,6 +937,7 @@ void createBoss(int type)
 	{
 		e.type = 12;
 		e.hp = 2000;
+		e.exp = 150;
 		e.obj = createObject("Images/b2.png", backgroundScene, e.x, e.y, true);
 		enemyList1.push_back(e);
 		playSound(b2AppearSound);
@@ -922,7 +946,8 @@ void createBoss(int type)
 	else if (type == 3)
 	{
 		e.type = 13;
-		e.hp = 3000;
+		e.hp = 2500;
+		e.exp = 300;
 		e.obj = createObject("Images/b3.png", backgroundScene, e.x, e.y, true);
 		enemyList1.push_back(e);
 		playSound(b3AppearSound);
@@ -972,7 +997,7 @@ void createBulit()
 		b.obj = createObject("Images/bulit3.png", backgroundScene, b.x, b.y, true);
 		bulitList.push_back(b);
 	}
-	else if (heroAgent.level == 3)
+	else if (heroAgent.level >= 3)
 	{
 		b.x = x;
 		b.y = y;
@@ -1005,6 +1030,7 @@ void initObjects()
 
 void initBackScene()
 {
+	setObjectImage(backSceneObject.obj,"Images/nebula03.png");
 	backSceneObject.x = 1120;
 	backSceneObject.y = -150;
 }
@@ -1052,6 +1078,11 @@ void initBulits()
 }
 void initEnemys()
 {
+	for (int i = 0; i < 4; i++)
+		boss[i] = 0;
+	for (int i = 0; i < 3; i++)
+		bossAppeared[i] = false;
+
 	list<enemyObject>::iterator iterE;
 	for (iterE = enemyList1.begin(); iterE != enemyList1.end(); )
 	{
@@ -1094,8 +1125,8 @@ pair<bool,int> isBulitHit(int x, int y, int width, int height)
 void checkLevel()
 {
 	char image[30];
-	printf("cur exp :%d\n", heroAgent.cumulatedExp);
-	if (heroAgent.cumulatedExp > 1500 && (heroAgent.level == 3) && (heroAgent.cumulatedExp % 500)==0 )
+	printf("current exp :%d\n", heroAgent.cumulatedExp);
+	if (heroAgent.cumulatedExp >= 500 &&(heroAgent.level >= 3))
 	{
 		playSound(levelUpSound);
 		//±√±ÿ±‚¡ı∞°
@@ -1105,9 +1136,10 @@ void checkLevel()
 			sprintf(image, "Images/%d.png", heroAgent.ultimate);
 			setObjectImage(heroAgent.ultimateCountObj, image);
 		}
-		
+		heroAgent.level++;
+		heroAgent.cumulatedExp -= 500;
 	}
-	else if (heroAgent.cumulatedExp > 1500 && (heroAgent.level == 2))
+	else if (heroAgent.cumulatedExp >= 500 && (heroAgent.level == 2))
 	{
 		playSound(levelUpSound);
 		//±√±ÿ±‚¡ı∞°
@@ -1116,9 +1148,9 @@ void checkLevel()
 		setObjectImage(heroAgent.ultimateCountObj, image);
 		setObjectImage(heroAgent.obj, "Images/agent3.png");
 		heroAgent.level = 3;
-
+		heroAgent.cumulatedExp -= 500;
 	}
-	else if (heroAgent.cumulatedExp > 1000 && (heroAgent.level == 1))
+	else if (heroAgent.cumulatedExp >= 500 && (heroAgent.level == 1))
 	{
 		playSound(levelUpSound);
 		//±√±ÿ±‚¡ı∞°
@@ -1128,8 +1160,9 @@ void checkLevel()
 		setObjectImage(heroAgent.obj, "Images/agent2.png");
 
 		heroAgent.level = 2;
+		heroAgent.cumulatedExp -= 500;
 	}
-	else if (heroAgent.cumulatedExp > 500 && (heroAgent.level == 0))
+	else if (heroAgent.cumulatedExp >= 500 && (heroAgent.level == 0))
 	{
 		playSound(levelUpSound);
 		//±√±ÿ±‚¡ı∞°
@@ -1140,6 +1173,7 @@ void checkLevel()
 
 
 		heroAgent.level = 1;
+		heroAgent.cumulatedExp -= 500;
 	}
 }
 
