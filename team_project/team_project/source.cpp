@@ -346,9 +346,9 @@ void timerCallback(TimerID timer)
 				// º¸½º1
 				if ((*iterE).type == 11)
 				{
-					if ((*iterE).moveTimer % 100 > 80)
+					if ((*iterE).moveTimer % 100 >= 80)
 						(*iterE).dx = 20;
-					else if ((*iterE).moveTimer % 100 > 60)
+					else if ((*iterE).moveTimer % 100 > 59)
 						(*iterE).dx = -20;
 					
 				}
