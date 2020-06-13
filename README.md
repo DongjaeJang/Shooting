@@ -3,7 +3,7 @@
 
 우주를 비행하며, 적을 제거해 나가는 아케이드 장르의 슈팅게임 입니다.
 
-[게임 소개 영상](https://youtube.com)
+[게임 소개 영상](https://youtu.be/7RaGjAgmI4k)
 
 ## 조작 방법
 
