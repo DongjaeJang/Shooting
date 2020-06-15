@@ -15,8 +15,8 @@
 #define REGEN_FRAME_RATE 0.1f
 #define BACK_SCENE_FRAME_PER_PIXEL 10
 #define BACK_SCENE_FRAME_PER_ADDITIONAL_PIXEL 10
-#define AGENT_UPDATE_TIME 0.01f
-#define OBJECT_UPDATE_TIME 0.01f
+#define AGENT_UPDATE_TIME 0.035f
+#define OBJECT_UPDATE_TIME 0.035f
 #define AGENT_SPEED 20
 #define AGENT_HEIGHT 50
 #define AGENT_WIDTH 50
@@ -52,7 +52,7 @@ struct agent
 	bool shown;
 };
 
-struct movableObject //´Ü¼ø ÀÌµ¿°´Ã¼ »óÈ£ÀÛ¿ë x
+struct movableObject //ë‹¨ìˆœ ì´ë™ê°ì²´ ìƒí˜¸ì‘ìš© x
 {
 	ObjectID obj;
 	int x;
@@ -134,15 +134,15 @@ agent heroAgent;
 movableObject backSceneObject;
 
 
-// index¸¦ È°¿ëÇÏÁö ¾Ê°í, iterator±â¹İÀ¸·Î¸¸ Á¢±ÙÇÏ¹Ç·Î, list°¡ ÁÁÀ½
-// »ğÀÔ¼Óµµ´Â »ó°ü ¾øÁö¸¸ mid±âÁØ Á¦°Å¼Óµµ°¡ list°¡ ´õºü¸§
+// indexë¥¼ í™œìš©í•˜ì§€ ì•Šê³ , iteratorê¸°ë°˜ìœ¼ë¡œë§Œ ì ‘ê·¼í•˜ë¯€ë¡œ, listê°€ ì¢‹ìŒ
+// ì‚½ì…ì†ë„ëŠ” ìƒê´€ ì—†ì§€ë§Œ midê¸°ì¤€ ì œê±°ì†ë„ê°€ listê°€ ë”ë¹ ë¦„
 list<enemyObject> enemyList1; 
 list<bulitObject> bulitList;
 
 bool gameStarted = false;
-int stage = 0; // µŞ¹è°æ º¯È­ ´Ü°è(stage)
+int stage = 0; // ë’·ë°°ê²½ ë³€í™” ë‹¨ê³„(stage)
 
-// º¸½º µîÀå Á¶Àı
+// ë³´ìŠ¤ ë“±ì¥ ì¡°ì ˆ
 bool bossAppeared[3] = { false, };
 bool boss[4] = { 0 };
 
@@ -205,6 +205,10 @@ int main()
 	heroAgent.ultimateIconObj = createObject("Images/ultimate.png", backgroundScene, 0, 600, false);
 	heroAgent.ultimateCountObj = createObject("Images/0.png", backgroundScene, 80, 600, false);
 	heroAgent.ultimateObj = createObject("Images/laser3.png", backgroundScene, heroAgent.x, heroAgent.y, false);
+	
+	setGameOption(GameOption::GAME_OPTION_ROOM_TITLE, false);
+	setGameOption(GameOption::GAME_OPTION_INVENTORY_BUTTON, false);
+	setGameOption(GameOption::GAME_OPTION_MESSAGE_BOX_BUTTON, false);
 	/*
 	Sounds
 	*/
@@ -269,7 +273,7 @@ void timerCallback(TimerID timer)
 {
 	if (timer == agentUpdateTimer)
 	{
-		//¸ğµç °´Ã¼ update
+		//ëª¨ë“  ê°ì²´ update
 		if (gameStarted == false)
 			return;
 		agentMove(heroAgent.dx, heroAgent.dy);
@@ -281,7 +285,7 @@ void timerCallback(TimerID timer)
 	else if (timer ==objectUpdateTimer)
 	{
 
-		//¹Ì»çÀÏ À§Ä¡ °»½Å
+		//ë¯¸ì‚¬ì¼ ìœ„ì¹˜ ê°±ì‹ 
 		list<bulitObject>::iterator iterB;
 		for (iterB = bulitList.begin(); iterB != bulitList.end(); )
 		{
@@ -291,14 +295,14 @@ void timerCallback(TimerID timer)
 			locateObject((*iterB).obj, backgroundScene, (*iterB).x, (*iterB).y);
 			if ((*iterB).x > SCREEN_WIDTH + 100)
 			{
-				iterB = bulitList.erase(iterB); // ¹üÀ§¸¦ ¹ş¾î³µÀ»¶§ ¸ñ·Ï¿¡¼­ Á¦°Å
+				iterB = bulitList.erase(iterB); // ë²”ìœ„ë¥¼ ë²—ì–´ë‚¬ì„ë•Œ ëª©ë¡ì—ì„œ ì œê±°
 			}
 			else
 			{
 				iterB++;
 			}
 		}
-		//Àû À§Ä¡ °»½Å
+		//ì  ìœ„ì¹˜ ê°±ì‹ 
 		list<enemyObject>::iterator iterE;
 		for (iterE = enemyList1.begin(); iterE != enemyList1.end(); )
 		{
@@ -308,7 +312,7 @@ void timerCallback(TimerID timer)
 			(*iterE).x += (*iterE).dx;
 			(*iterE).y += (*iterE).dy;
 
-			// type Á¾·ù¿¡ µû¶ó moveÆĞÅÏ ¼³Á¤ À§ÇÔ
+			// type ì¢…ë¥˜ì— ë”°ë¼ moveíŒ¨í„´ ì„¤ì • ìœ„í•¨
 			if ((*iterE).type == 2)
 			{
 				if ((*iterE).moveTimer % 10 < 5)
@@ -337,13 +341,13 @@ void timerCallback(TimerID timer)
 
 				(*iterE).moveTimer += 1;
 			}
-			// º¸½º
+			// ë³´ìŠ¤
 			else if ((*iterE).type == 11 || (*iterE).type == 12 || (*iterE).type == 13)
 			{
 				if ((*iterE).moveTimer >= 3)
 					(*iterE).dx = 0;
 
-				// º¸½º1
+				// ë³´ìŠ¤1
 				if ((*iterE).type == 11)
 				{
 					if ((*iterE).moveTimer % 100 >= 80)
@@ -352,7 +356,7 @@ void timerCallback(TimerID timer)
 						(*iterE).dx = -20;
 					
 				}
-				// º¸½º2
+				// ë³´ìŠ¤2
 				else if ((*iterE).type == 12)
 				{
 					if ((*iterE).moveTimer % 400 == 130)
@@ -379,7 +383,7 @@ void timerCallback(TimerID timer)
 
 					}
 				}
-				// º¸½º3
+				// ë³´ìŠ¤3
 				else if ((*iterE).type == 13)
 				{
 					if ((*iterE).moveTimer % 400 == 130)
@@ -417,7 +421,7 @@ void timerCallback(TimerID timer)
 			locateObject((*iterE).obj, backgroundScene, (*iterE).x, (*iterE).y);
 
 
-			//ÃÑ¾Ë°ú ºÎ‹HÇû´ÂÁö
+			//ì´ì•Œê³¼ ë¶€Â‹Hí˜”ëŠ”ì§€
 			hit = isBulitHit((*iterE).x, (*iterE).y, (*iterE).height, (*iterE).width);
 			if (hit.first)
 			{
@@ -447,7 +451,7 @@ void timerCallback(TimerID timer)
 				}
 
 			}
-			//Á¶Á¾´ë»ó¿¡ ºÎ‹HÇûÀ»¶§
+			//ì¡°ì¢…ëŒ€ìƒì— ë¶€Â‹Hí˜”ì„ë•Œ
 			if(!(heroAgent.invincible)&&isAgentHit((*iterE).x, (*iterE).y,(*iterE).width, (*iterE).height))
 			{
 				playSound(explosionSound);
@@ -469,7 +473,7 @@ void timerCallback(TimerID timer)
 			else if ((*iterE).x < -100 || destroy)
 			{
 				hideObject((*iterE).obj);
-				iterE = enemyList1.erase(iterE); // ¹üÀ§¸¦ ¹ş¾î³µÀ»¶§ ¸ñ·Ï¿¡¼­ Á¦°Å
+				iterE = enemyList1.erase(iterE); // ë²”ìœ„ë¥¼ ë²—ì–´ë‚¬ì„ë•Œ ëª©ë¡ì—ì„œ ì œê±°
 			}
 			else
 			{
@@ -514,7 +518,7 @@ void timerCallback(TimerID timer)
 					boss[2] = 1;
 					createBoss(3);
 				}
-				else//3½ºÅÂÀÌÁö ÀÌÈÄ
+				else//3ìŠ¤íƒœì´ì§€ ì´í›„
 				{
 
 					if (stage % 3 == 0)
@@ -685,27 +689,27 @@ void keyboardCallback(KeyCode kc, KeyState ks)
 		return;
 	if (ks == KeyState::KEYBOARD_PRESSED)
 	{
-		if (kc == 83)//¿À¸¥Á·
+		if (kc == 83)//ì˜¤ë¥¸ì¡±
 		{
 			heroAgent.dx = AGENT_SPEED;
 		}
-		else if (kc == 84)//À§
+		else if (kc == 84)//ìœ„
 		{
 			heroAgent.dy = AGENT_SPEED;
 		}
-		else if (kc == 85) // ¾Æ·¡
+		else if (kc == 85) // ì•„ë˜
 		{
 			heroAgent.dy = -AGENT_SPEED;
 		}
-		else if (kc == 82) //¿ŞÂÊ
+		else if (kc == 82) //ì™¼ìª½
 		{
 			heroAgent.dx = -AGENT_SPEED;
 		}
-		else if (kc == 1) // a(°ø°İ)
+		else if (kc == 1) // a(ê³µê²©)
 		{
 			createBulit();
 		}
-		else if (heroAgent.ultimateActivate==false&&kc == 19 )// s ÇÊ»ì±â
+		else if (heroAgent.ultimateActivate==false&&kc == 19 )// s í•„ì‚´ê¸°
 		{
 			if (heroAgent.ultimate == 0)
 			{
@@ -719,22 +723,22 @@ void keyboardCallback(KeyCode kc, KeyState ks)
 	}
 	else if (ks == KeyState::KEYBOARD_RELEASED)
 	{
-		if (kc == 83)//¿À¸¥Á·
+		if (kc == 83)//ì˜¤ë¥¸ì¡±
 		{
 			if(heroAgent.dx == AGENT_SPEED)
 				heroAgent.dx=0;
 		}
-		else if (kc == 84)//À§
+		else if (kc == 84)//ìœ„
 		{
 			if (heroAgent.dy == AGENT_SPEED)
 				heroAgent.dy = 0;
 		}
-		else if (kc == 85) // ¾Æ·¡
+		else if (kc == 85) // ì•„ë˜
 		{
 			if (heroAgent.dy == -AGENT_SPEED)
 				heroAgent.dy = 0;
 		}
-		else if (kc == 82) //¿ŞÂÊ
+		else if (kc == 82) //ì™¼ìª½
 		{
 			if (heroAgent.dx == -AGENT_SPEED)
 				heroAgent.dx = 0;
@@ -809,7 +813,7 @@ actions
 
 void agentMove(int dx, int dy)
 {
-	//x,yÃà ÀÌµ¿¹üÀ§ Á¦ÇÑ
+	//x,yì¶• ì´ë™ë²”ìœ„ ì œí•œ
 	if (heroAgent.x + heroAgent.dx > SCREEN_WIDTH || heroAgent.x + heroAgent.dx < 0 
 		|| heroAgent.y + heroAgent.dy > SCREEN_HEIGHT-100 || heroAgent.y + heroAgent.dy < 0)
 	{
@@ -831,7 +835,7 @@ void createEnemy(int type)
 {
 	enemyObject e;
 	int yPos = rand() % (SCREEN_HEIGHT - 100);
-	int dx = -((rand() % 10) + 2);//°¡·Î¼Óµµ
+	int dx = -((rand() % 10) + 2);//ê°€ë¡œì†ë„
 	int additional_speed = 0;
 	if (stage >= 3)
 		additional_speed = -5;
@@ -894,7 +898,7 @@ void createEnemy(int type)
 	}
 }
 
-// Àû4 ¹Ì»çÀÏ
+// ì 4 ë¯¸ì‚¬ì¼
 void createEnemyBuilt(int x, int y, int dx, int dy)
 {
 	enemyObject e;
@@ -922,7 +926,7 @@ void createBoss(int type,int y)
 	e.width = 200;
 	e.height = 200;
 
-	// º¸½º 1
+	// ë³´ìŠ¤ 1
 	if (type == 1)
 	{
 		e.type = 11;
@@ -932,7 +936,7 @@ void createBoss(int type,int y)
 		enemyList1.push_back(e);
 		playSound(b1AppearSound);
 	}
-	// º¸½º 2
+	// ë³´ìŠ¤ 2
 	else if (type == 2)
 	{
 		e.type = 12;
@@ -942,7 +946,7 @@ void createBoss(int type,int y)
 		enemyList1.push_back(e);
 		playSound(b2AppearSound);
 	}
-	// º¸½º 3
+	// ë³´ìŠ¤ 3
 	else if (type == 3)
 	{
 		e.type = 13;
@@ -963,7 +967,7 @@ void createBulit()
 	bulitObject b;
 	int x = heroAgent.x+60;
 	int y = heroAgent.y+20;
-	int dx = 50;//Åº¼Ó
+	int dx = 50;//íƒ„ì†
 	int dy = 0;
 
 
@@ -1129,7 +1133,7 @@ void checkLevel()
 	if (heroAgent.cumulatedExp >= 500 &&(heroAgent.level >= 3))
 	{
 		playSound(levelUpSound);
-		//±Ã±Ø±âÁõ°¡
+		//ê¶ê·¹ê¸°ì¦ê°€
 		if (heroAgent.ultimate < 5)
 		{
 			heroAgent.ultimate++;
@@ -1142,7 +1146,7 @@ void checkLevel()
 	else if (heroAgent.cumulatedExp >= 500 && (heroAgent.level == 2))
 	{
 		playSound(levelUpSound);
-		//±Ã±Ø±âÁõ°¡
+		//ê¶ê·¹ê¸°ì¦ê°€
 		heroAgent.ultimate++;
 		sprintf(image, "Images/%d.png", heroAgent.ultimate);
 		setObjectImage(heroAgent.ultimateCountObj, image);
@@ -1153,7 +1157,7 @@ void checkLevel()
 	else if (heroAgent.cumulatedExp >= 500 && (heroAgent.level == 1))
 	{
 		playSound(levelUpSound);
-		//±Ã±Ø±âÁõ°¡
+		//ê¶ê·¹ê¸°ì¦ê°€
 		heroAgent.ultimate++;
 		sprintf(image, "Images/%d.png", heroAgent.ultimate);
 		setObjectImage(heroAgent.ultimateCountObj, image);
@@ -1165,7 +1169,7 @@ void checkLevel()
 	else if (heroAgent.cumulatedExp >= 500 && (heroAgent.level == 0))
 	{
 		playSound(levelUpSound);
-		//±Ã±Ø±âÁõ°¡
+		//ê¶ê·¹ê¸°ì¦ê°€
 		heroAgent.ultimate++;
 		sprintf(image, "Images/%d.png", heroAgent.ultimate);
 		setObjectImage(heroAgent.ultimateCountObj, image);
