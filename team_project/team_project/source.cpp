@@ -15,9 +15,9 @@
 #define REGEN_FRAME_RATE 0.1f
 #define BACK_SCENE_FRAME_PER_PIXEL 10
 #define BACK_SCENE_FRAME_PER_ADDITIONAL_PIXEL 10
-#define AGENT_UPDATE_TIME 0.035f
+#define AGENT_UPDATE_TIME 0.01f
 #define OBJECT_UPDATE_TIME 0.035f
-#define AGENT_SPEED 20
+#define AGENT_SPEED 7
 #define AGENT_HEIGHT 50
 #define AGENT_WIDTH 50
 #define ENEMY_1_GEN_RATE 0.8f
@@ -421,7 +421,7 @@ void timerCallback(TimerID timer)
 			locateObject((*iterE).obj, backgroundScene, (*iterE).x, (*iterE).y);
 
 
-			//총알과 부H혔는지
+			//총알과 부딪혔는지
 			hit = isBulitHit((*iterE).x, (*iterE).y, (*iterE).height, (*iterE).width);
 			if (hit.first)
 			{
@@ -577,7 +577,7 @@ void timerCallback(TimerID timer)
 			createEnemy(randType);
 		}
 		if(stage >=3)
-			setTimer(enemy1GenTimer, ENEMY_1_GEN_RATE-0.4);
+			setTimer(enemy1GenTimer, ENEMY_1_GEN_RATE-0.4f);
 		else
 			setTimer(enemy1GenTimer, ENEMY_1_GEN_RATE);
 		startTimer(enemy1GenTimer);
@@ -902,6 +902,7 @@ void createEnemy(int type)
 void createEnemyBuilt(int x, int y, int dx, int dy)
 {
 	enemyObject e;
+	e.type = -1;
 	e.x = x;
 	e.y = y;
 	e.dx = -dx;

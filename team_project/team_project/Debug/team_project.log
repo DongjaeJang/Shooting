@@ -1,3 +1,4 @@
 ﻿  source.cpp
-C:\Users\duddj\git_repo\Shooting\team_project\team_project\source.cpp(576,49): warning C4305: '인수': 'double'에서 'Second'(으)로 잘립니다.
-  team_project.vcxproj -> C:\Users\duddj\git_repo\Shooting\team_project\Debug\team_project.exe
+C:\Users\duddj\Shooting\team_project\team_project\source.cpp(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Users\duddj\Shooting\team_project\team_project\source.cpp(580,49): warning C4305: '인수': 'double'에서 'Second'(으)로 잘립니다.
+  team_project.vcxproj -> C:\Users\duddj\Shooting\team_project\Debug\team_project.exe
