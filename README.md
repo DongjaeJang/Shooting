@@ -1,6 +1,10 @@
 # Shooting Star
 ## 게임소개
 
+![main](./assets/main.png)
+
+![play](./assets/play.png)
+
 우주를 비행하며, 적을 제거해 나가는 아케이드 장르의 슈팅게임 입니다.
 
 [게임 소개 영상](https://youtu.be/7RaGjAgmI4k)
@@ -44,4 +48,4 @@
 
 ## 실행 방법
 
-[설치파일](./ShootingStar_installer.msi)을 실행해주시고, 정상적으로 설치한 뒤에 실행해 주시면 됩니다.
+[설치파일](https://github.com/DongjaeJang/Shooting/releases/download/v0.2.2.0/ShootingStar.msi)을 실행해주시고, 정상적으로 설치한 뒤에 실행해 주시면 됩니다.
