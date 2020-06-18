@@ -1,9 +1,9 @@
 # Shooting Star
 ## 게임소개
 
-![main](./assets/main.png)
+![main](./assets/main.PNG)
 
-![play](./assets/play.png)
+![play](./assets/play.PNG)
 
 우주를 비행하며, 적을 제거해 나가는 아케이드 장르의 슈팅게임 입니다.
 
